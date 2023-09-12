@@ -1,2 +1,5 @@
-ref/
-venv/
+/__pycache__
+/ref
+/venv
+/data/*.db
+/data/*.sqlite

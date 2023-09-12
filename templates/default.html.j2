@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>{{ title }}</title>
+{% for f in css %}
+        <link rel="stylesheet" type="text/css" href="{{
+            url_for('static', filename='css/' + f)
+            }}" />
+{% endfor %}
+    </head>
+    <body>
+{% if header != undefined and header == true %}
+        <header>    
+            <svg class="dialogue" width="500" height="140">
+                <g>
+                    <path d="M 10,10 m 0,8 a 8,8 0,0,1 8,-8
+                        l 432,0 a 8,8 0,0,1 8,8
+                        l 0,48 a 32,48 0,0,0 32,48
+                        l -16,0 a 16,8 0,0,1 -16,-6
+                        l 0,14 a 8,8 0,0,1 -8,8
+                        l -432,0 a 8,8 0,0,1 -8,-8 z" />
+                    <text id="title" x="235" y="70">I, Bookworm.</text>
+                </g>
+            </svg>
+        </header>
+{% endif %}
+        {% block content %}{% endblock %}
+    </body>
+</html>

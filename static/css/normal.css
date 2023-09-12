@@ -1,0 +1,39 @@
+
+:root
+{
+    --bg-color: rgba(255,255,255,1);
+    --fg-color: black;
+    --dark-color: rgb(0,0,100);
+    --light-color: rgb(200,200,255);
+    --fontsize: 24px;
+    font-size: calc(var(--fontsize)*1);
+    line-height: 1.25em;
+    font-family: "Arial Black", "微軟正黑體", sans-serif;
+}
+
+body
+{
+    background-color: var(--dark-color)
+}
+
+svg.dialogue
+{
+    transform: scale(1);
+    transform-origin: top left;
+}
+svg.dialogue path
+{
+    stroke: var(--fg-color);
+    stroke-width: 2;
+    fill: var(--bg-color);
+}
+svg.dialogue text
+{
+    text-anchor: middle;
+    dominant-baseline: central;
+    fill: var(--fg-color);
+    stroke: transparent;
+    font-weight: bold;
+    font-size: 2em;
+    line-height: 2.5em;
+}
