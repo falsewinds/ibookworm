@@ -1,4 +1,5 @@
-from flask import Flask, render_template, redirect, jsonify
+from flask import Flask, request, render_template, redirect, jsonify
+import localdb as iDB
 
 app = Flask(__name__)
 
@@ -8,6 +9,7 @@ Default Settings
 
 CAPTION = "I, Bookworm"
 css = [ "normal.css" ]
+jss = [ "reader.js" ]
 
 def capt(suffix = None):
     if suffix is None:
@@ -21,7 +23,7 @@ Views
 @app.route("/")
 def loginpage():
     return render_template("landing.html.j2",
-        title=CAPTION, css=css, header=True)
+        title=CAPTION, css=css, js=jss, header=True)
 
 @app.route("/me/")
 def member():
@@ -46,7 +48,7 @@ def edit(repo = None, doc = None):
         title=capt("Editor"), css=css)
 
 @app.route("/logout")
-def member():
+def logout():
     return render_template("default.html.j2",
         title=capt(), css=css)
 
@@ -66,8 +68,9 @@ def modify_repository():
 
 @app.route("/open", methods=["POST"])
 def new_document():
-    return jsonify({})
-    #return redirect("view", repo="", doc="")
+    repo = request.args.get("repository")
+    doc_id = iDB.create_doc(repo+".db")
+    return jsonify({ "doc_id": doc_id })
 
 @app.route("/load", methods=["POST"])
 def load_document():
@@ -75,6 +78,14 @@ def load_document():
 
 @app.route("/save", methods=["POST"])
 def save_document():
+    return jsonify({})
+
+@app.route("/import/<repo>", methods=["POST"])
+def import_documents(repo):
+    return jsonify({})
+
+@app.route("/peek/<job>", methods=["POST","GET"])
+def peek_job_progress(job):
     return jsonify({})
 
 @app.route("/download/<repo>")
