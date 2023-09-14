@@ -5,6 +5,9 @@
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>{{ title }}</title>
+        <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}" sizes="any" />
+        <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml" />
+        <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}" />
 <!-- StyleSheet Block Begin -->{% for f in css %}
         <link rel="stylesheet" type="text/css" href="{{
             url_for('static', filename='css/' + f)
@@ -12,23 +15,12 @@
 {% endfor %}<!-- StyleSheet Block End -->
     </head>
     <body>
-<!-- Header Block Begin -->{% if header == true %}
-        <header>    
-            <svg class="dialogue" width="500" height="140">
-                <g>
-                    <path d="M 10,10 m 0,8 a 8,8 0,0,1 8,-8
-                        l 432,0 a 8,8 0,0,1 8,8
-                        l 0,48 a 32,48 0,0,0 32,48
-                        l -16,0 a 16,8 0,0,1 -16,-6
-                        l 0,14 a 8,8 0,0,1 -8,8
-                        l -432,0 a 8,8 0,0,1 -8,-8 z" />
-                    <text id="title" x="235" y="70">I, Bookworm.</text>
-                </g>
-            </svg>
-        </header>
-{% endif %}<!-- Header Block End -->
+{% include 'header.html.j2' %}
+        <div class="-wrapper">
 <!-- Content Block Begin -->{% block content %}
 {% endblock %}<!-- Content Block End -->
+        </div>
+{% if not noapp %}<!-- JS Block Begin -->
 <!-- JS Module Block Begin -->{% for f in js %}
         <script type="module" src="{{
             url_for('static', filename='js/' + f)
@@ -40,5 +32,6 @@ import { app } from "{{
             }}";
 app.run();
         </script>
+<!-- JS Block End -->{% endif %}
     </body>
 </html>

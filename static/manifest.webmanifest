@@ -1,0 +1,20 @@
+{
+    "start_url": "/",
+    "id": "/",
+    "name": "I, Bookworm: sharing documents.",
+    "short_name": "I, Bookworm.",
+    "description": "Under construction.",
+    "dir": "ltr",
+    "lang": "zh-TW",
+    "orientation": "portrait-primary",
+    "display": "standalone",
+    "background_color": "white",
+    "theme_color": "rgb(100,215,255)",
+    "icons": [
+        {
+            "src": "/static/img/favicon.svg",
+            "sizes": "256x256",
+            "type": "image/svg+xml"
+        }
+    ]
+}

@@ -1,0 +1,72 @@
+{% if header == true %}
+<header>
+{% else %}
+<nav>
+{% endif %}
+    <div class="-wrapper">
+{% if header == true %}
+        <svg class="dialogue" viewBox="0 0 500 140">
+            <g>
+                <path d="M 10,10 m 0,8 a 8,8 0,0,1 8,-8
+                    l 432,0 a 8,8 0,0,1 8,8
+                    l 0,48 a 32,48 0,0,0 32,48
+                    l -16,0 a 16,8 0,0,1 -16,-6
+                    l 0,14 a 8,8 0,0,1 -8,8
+                    l -432,0 a 8,8 0,0,1 -8,-8 z" />
+                <text id="title" x="235" y="70">I, Bookworm.</text>
+            </g>
+        </svg>
+{% endif %}
+        <svg class="bookworm" viewBox="0 0 1000 1000">
+            <g class="background">
+                <path d="M 400,180 l 500,80
+                    a 60,120 -10,0,1 40,200
+                    l -370,500 l -500,-80
+                    l -40,-200 z" />
+            </g>
+            <g class="book">
+                <path d="M 400,180 l 500,80
+                    a 60,120 -10,0,1 40,200
+                    l -370,500
+                    a 60,120 -10,0,0 -40,-200
+                    l -500,-80 z"/>
+            </g>
+            <g class="lines">
+                <path d="M 400,180 m -370,500
+                    m 5,25 l 475,76 m -475,-76
+                    m 5,25 l 500,80 m -500,-80
+                    m 5,25 l 500,80 m -500,-80
+                    m 5,25 l 500,80 m -500,-80
+                    m 5,25 l 500,80 m -500,-80
+                    m 5,25 l 500,80 m -500,-80
+                    m 5,25 l 475,76 m -475,-76
+                    m 5,25 l 500,80 m -500,-80 z" />
+                <path d="M 400,180 m 500,80
+                    l -370,500
+                    M 400,200 z" />
+            </g>
+            <g class="hole">
+                <path d="M 550,435
+                    a 90,50 0,1,1 -150,0
+                    M 550,430 z"/>
+            </g>
+            <g class="worm">
+                <path d="M 550,460
+                    a 75,40 0,0,1 -150,0
+                    s 0,-200 -250,-230
+                    a 65,65 0,0,1 50,-150
+                    s 350,50 350,380
+                    z" />
+            </g>
+        </svg>
+{% if header != true %}
+        <span>I, Bookworm.</span>
+        <a href="{{ url_for('logout') }}">logout</a>
+{% endif %}
+    </div>
+{% if header == true %}
+</header>
+<!-- loop over "I, Bookworm.", "我，書蟲。", "俺、本の虫。" -->
+{% else %}
+</nav>
+{% endif %}

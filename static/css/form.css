@@ -1,0 +1,88 @@
+:root
+{
+    --spacing: 0.25rem;
+    --blurred-border: lightgray;
+    --hovered-border: gray;
+    --focused-border: black;
+    --focused-bgcolor: rgb(255,255,220);
+}
+
+form.-center
+{
+    display: block;
+    margin: var(--spacing) auto;
+    outline: 0px;
+    border: var(--spacing) dashed var(--hovered-border);
+    border-radius: calc(var(--spacing)*4);
+    padding: calc(var(--spacing)*4);
+    width: fit-content;
+}
+
+input,
+select,
+textarea
+{
+    box-sizing: border-box;
+    display: inline-block;
+    margin: 0px;
+    outline: 0px;
+    border: 1px solid var(--blurred-border);
+    border-radius: var(--spacing);
+    padding: var(--spacing);
+    /*width: 100%;*/
+    font-size: 1rem;
+    line-height: var(--line-height);
+}
+
+input:hover,
+select:hover,
+textarea:hover
+{
+    outline: 0px;
+    border-color: var(--hovered-border);
+}
+
+input:focus,
+select:focus,
+textarea:focus
+{
+    outline: 0px;
+    border-color: var(--focused-border);
+    background-color: var(--focused-bgcolor);
+}
+
+label
+{
+    display: block;
+    margin: var(--spacing);
+    /*padding: calc(var(--spacing) / 10);*/
+}
+label[kj-label]
+{
+    margin-bottom: calc(var(--spacing)*4);
+    /*padding-top: 1em;*/
+}
+label[kj-label]::before
+{
+    content: attr(kj-label);
+    display: block;
+    font-size: 0.6em;
+    text-transform: uppercase;
+    color: var(--hovered-border);
+}
+label[kj-label]:hover::before,
+label[kj-label]:focus-within::before
+{
+    color: var(--focused-border);
+}
+
+button
+{
+    display: block;
+    margin: var(--spacing) auto;
+    outline: 0px;
+    border: 1px solid var(--focused-border);
+    border-radius: var(--spacing);
+    padding: var(--spacing) calc(var(--spacing)*3);
+    font-size: 1rem;
+}

@@ -1,4 +1,12 @@
 {% extends 'default.html.j2' %}
 {% block content %}
-    The Landing page
+<form class="-center" method="POST" action="{{ url_for('login') }}">
+    <label kj-label="Username">
+        <input type="text" name="username" value="{{ username }}" spellcheck="false" autocorrect="off" />
+    </label>
+    <label kj-label="Password">
+        <input type="password" name="password" />
+    </label>
+    <button>Login</button>
+</form>
 {% endblock %}
