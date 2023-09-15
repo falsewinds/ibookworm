@@ -15,11 +15,13 @@
 {% endfor %}<!-- StyleSheet Block End -->
     </head>
     <body>
-{% include 'header.html.j2' %}
-        <div class="-wrapper">
+{% if header %}
+        {% include 'header.html.j2' %}
+{% else %}
+        {% include 'navigator.html.j2'%}
+{% endif %}
 <!-- Content Block Begin -->{% block content %}
 {% endblock %}<!-- Content Block End -->
-        </div>
 {% if not noapp %}<!-- JS Block Begin -->
 <!-- JS Module Block Begin -->{% for f in js %}
         <script type="module" src="{{
@@ -27,9 +29,8 @@
             }}"></script>
 {% endfor %}<!-- JS Module Block End -->
         <script type="module">
-import { app } from "{{
-    url_for('static', filename='js/ibookworm.js')
-            }}";
+import { app } from "{{ url_for('static',filename='js/ibookworm.js') }}";
+{% block script %}{% endblock %}
 app.run();
         </script>
 <!-- JS Block End -->{% endif %}

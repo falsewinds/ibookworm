@@ -17,6 +17,7 @@ body
     background-color: var(--bg-color);
     margin: 0px;
     padding: 0px;
+    min-height: 50px;
 }
 
 .-wrapper
@@ -52,8 +53,8 @@ svg.dialogue text
     stroke: transparent;
     font-weight: bold;
     font-family: "Arial Black", "微軟正黑體", sans-serif;
-    font-size: 2rem;
-    line-height: 2.5rem;
+    font-size: 48px;
+    line-height: 60px;
 }
 
 /*------------------------------------------------------------*\
@@ -168,12 +169,60 @@ header > div.-wrapper > svg.bookworm
 \*------------------------------------------------------------*/
 nav
 {
+    position: fixed;
+    inset: 0px 0px auto;
+    box-sizing: border-box;
+    display: block;
+    margin: 0px;
+    outline: 0px;
+    border: 0px;
+    padding: 0px 8px;
+    height: 48px;
     background-color: var(--nav-color);
+    transition: top 0.1s;
 }
+nav.hidden
+{
+    top: -48px;
+}
+
+nav + .-wrapper
+{
+    margin-top: 64px;
+}
+
+nav > .-wrapper
+{
+    display: flex;
+}
+
 nav svg.bookworm
 {
+    margin: 8px;
     width: 32px;
     height: 32px;
     transform-origin: center center;
     transform: scaleX(-1);
+}
+nav .caption
+{
+    flex: 1;
+    display: block;
+    margin: 8px;
+    padding: 0px;
+    font-size: 24px;
+    line-height: 32px;
+    color: var(--fg-color);
+}
+nav .icon
+{
+    box-sizing: border-box;
+    display: block;
+    margin: 4px;
+    border-radius: 50%;
+    padding: 0px;
+    background-color: var(--book-color);
+    width: 40px;
+    height: 40px;
+    overflow: hidden;
 }

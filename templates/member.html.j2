@@ -1,3 +1,33 @@
 {% extends 'default.html.j2' %}
 {% block content %}
+<div class="-wrapper">
+    <div id="Member">Me</div>
+</div>
+<div class="-wrapper cardset">
+    <div class="card shine"></div>
+    <div class="card shine"></div>
+</div>
 {% endblock %}
+
+<script>
+{% block script %}
+app.ready((ap)=>{
+    let repos = document.querySelector(".cardset");
+    app.post("/list").then((json)=>{
+        repos.innerHTML = "";
+        //console.log(json);
+        let new_repo = app.dom("div",["card","new"]);
+        new_repo.addEventListener("click",()=>{
+            console.log("create");
+            /*app.dialog().then((fields)=>{
+                app.post("/create",fields).then((json)=>{
+                    console.log(json)
+                    location.href = "/view/" + json.repository
+                })
+            })*/
+        });
+        repos.appendChild(new_repo);
+    });
+});
+{% endblock %}
+</script>

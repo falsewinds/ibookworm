@@ -86,3 +86,12 @@ button
     padding: var(--spacing) calc(var(--spacing)*3);
     font-size: 1rem;
 }
+
+form div.error
+{
+    display: block;
+    margin-bottom: calc(var(--spacing)*4);
+    text-align: center;
+    font-size: 0.8rem;
+    color: red;
+}

@@ -1,0 +1,68 @@
+
+/*------------------------------------------------------------*\
+ * Member Card
+\*------------------------------------------------------------*/
+#Member
+{
+    --pad: calc(var(--spacing)*4);
+    box-sizing: border-box;
+    display: block;
+    margin: var(--pad) 0px;
+    outline: 0px;
+    border: var(--spacing) dashed var(--book-color);
+    border-radius: var(--pad);
+    padding: var(--pad);
+    width: 100%;
+    min-height: 120px;
+}
+
+@media screen and (max-width: 400px)
+{
+    #Member
+    {
+        min-height: none;
+    }
+}
+
+/*------------------------------------------------------------*\
+ * Repository Card
+\*------------------------------------------------------------*/
+.cardset
+{
+    --size: calc(100% / 2 - var(--spacing) * 2);
+    --rad: calc(var(--spacing)*3);
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.cardset > .card
+{
+    position: relative;
+    flex: 1 1 var(--size);
+    box-sizing: border-box;
+    display: block;
+    margin: var(--spacing);
+    border: var(--spacing) solid transparent;
+    border-radius: var(--rad);
+    padding: var(--spacing);
+    max-width: var(--size);
+    height: 200px;
+    background-color: var(--blurred-border);
+    overflow: hidden;
+}
+.cardset > .card[data-color]
+{
+    border-color: rgba(255,255,255,0.2);
+}
+/*.cardset > .card[data-color=]
+{
+    background-color: attr(kj-card-color);
+}*/
+
+.cardset > .card.new
+{
+    border-style: dashed;
+    border-color: var(--blurred-border);
+    background-color: transparent;
+}
