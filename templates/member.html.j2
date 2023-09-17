@@ -1,4 +1,5 @@
 {% extends 'default.html.j2' %}
+
 {% block content %}
 <div class="-wrapper">
     <div id="Member">Me</div>
@@ -12,22 +13,57 @@
 <script>
 {% block script %}
 app.ready((ap)=>{
-    let repos = document.querySelector(".cardset");
-    app.post("/list").then((json)=>{
-        repos.innerHTML = "";
-        //console.log(json);
-        let new_repo = app.dom("div",["card","new"]);
-        new_repo.addEventListener("click",()=>{
-            console.log("create");
-            /*app.dialog().then((fields)=>{
-                app.post("/create",fields).then((json)=>{
-                    console.log(json)
-                    location.href = "/view/" + json.repository
-                })
-            })*/
+    let repo_area = document.querySelector(".cardset"),
+        create = repo_area.querySelector(".card.new");
+    function reload() {
+        app.post("/list",{}).then((json)=>{
+            // Step 1: get all cards.
+            let cards = repo_area.querySelectorAll(".card"),
+                card_map = {};
+            // Step 2: remove all cards.
+            for(let i=0;i<cards.length;i++) {
+                let card = cards[i];
+                repo_area.removeChild(card);
+                if (card.hasAttribute("repository-id")) {
+                    let id = card.getAttribute("repository-id");
+                    if (id!=null) { card_map[id] = card; }
+                }
+            }
+            // Step 3: add card exist or new
+            for(let c of json) {
+                if (c.id in card_map) {
+                    repo_area.appendChild(card_map[c.id]);
+                    continue;
+                }
+                let ce = app.dom("a",["card"],c.title),
+                    url = "/view/" + ((c.alias!=null) ? c.alias : c.id) + "/";
+                ce.setAttribute("repository-id",c.id);
+                ce.setAttribute("href",url);
+                repo_area.appendChild(ce);
+            }
+            // Step 4: add back "create" button
+            repo_area.appendChild(create);
         });
-        repos.appendChild(new_repo);
-    });
+    }
+    if (create==null) {
+        // Create "create repository" Button
+        create = app.dom("div",["card","new"],"Create New Repository");
+        create.addEventListener("click",()=>{
+            app.dialog("",[
+                {   "name": "title",
+                    "title": "Title"
+                }
+            ]).then((fields)=>{
+                app.post("/create",fields).then((json)=>{
+                    console.log(json);
+                    reload();
+                    //location.href = "/view/" + json.repository
+                })
+            }).catch(()=>{});
+        });
+        repo_area.appendChild(create);
+    }
+    reload();
 });
 {% endblock %}
 </script>

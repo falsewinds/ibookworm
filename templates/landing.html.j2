@@ -3,7 +3,9 @@
 <div class="-wrapper">
     <form class="-center" method="POST" action="{{ url_for('login') }}">
         <label kj-label="Username">
-            <input type="text" name="username" value="{{ username }}" spellcheck="false" autocorrect="off" />
+            <input type="text" name="username"
+            {% if username %} value="{{ username }}" {% endif %}
+            spellcheck="false" autocorrect="off" />
         </label>
         <label kj-label="Password">
             <input type="password" name="password" />

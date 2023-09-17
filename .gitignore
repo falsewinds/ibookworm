@@ -1,5 +1,7 @@
 /__pycache__
 /ref
 /venv
+/data/*/
 /data/*.db
 /data/*.sqlite
+/data/config.yaml

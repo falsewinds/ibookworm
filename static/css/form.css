@@ -18,6 +18,14 @@ form.-center
     width: fit-content;
 }
 
+/*------------------------------------------------------------*\
+ * INPUT
+ * SELECT
+ * TEXTAREA
+ * LABEL
+ * BUTTON
+\*------------------------------------------------------------*/
+
 input,
 select,
 textarea
@@ -94,4 +102,67 @@ form div.error
     text-align: center;
     font-size: 0.8rem;
     color: red;
+}
+
+/*------------------------------------------------------------*\
+ * svg.cover
+\*------------------------------------------------------------*/
+svg.-cover
+{
+    position: fixed;
+    inset: 0px;
+    z-index: 999;
+}
+
+/*------------------------------------------------------------*\
+ * dialog
+\*------------------------------------------------------------*/
+.-dialog
+{
+    position: fixed;
+    inset: 0px auto auto 0px;
+    z-index: 1000;
+    box-sizing: border-box;
+    display: block;
+    margin: 10px;
+    outline: 0px;
+    border: 0px;
+    border-radius: var(--spacing);
+    padding: var(--spacing);
+    background-color: rgba(255,255,255,0.5);
+    width: fit-content;
+    height: auto;
+}
+
+.-dialog > form
+{
+    margin: var(--spacing);
+    background-color: var(--bg-color);
+}
+
+.-dialog .-fields
+{
+    display: block;
+}
+
+.-dialog .-buttons
+{
+    display: flex;
+    margin: var(--spacing);
+    flex-direction: row;
+    flex-wrap: nowrap;
+}
+.-dialog form .-buttons > button
+{
+    flex: 1;
+    margin: 0px var(--spacing);
+    width: auto;
+}
+.-dialog .-buttons > button.confirm
+{
+    background-color: rgb(100,255,100);
+}
+.-dialog .-buttons > button.cancel
+{
+    background-color: rgb(255,100,100);
 }

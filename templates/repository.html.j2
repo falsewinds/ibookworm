@@ -1,3 +1,58 @@
 {% extends 'default.html.j2' %}
+
 {% block content %}
+<div class="-wrapper">
+    <div>{{ repo_name }}</div>
+    <div id="tools"></div>
+    <ul id="toc"></ul>
+</div>
 {% endblock %}
+
+<script>
+{% block script %}
+app.ready((ap)=>{
+    let tools = document.querySelector("#tools"),
+        toc = document.querySelector("#toc");
+    // Tool: remove test button
+    tools.appendChild(app.dom("button",[],"modify").listen("click",()=>{
+        app.dialog("Modify",[
+            { "name": "alias", "title": "alias" },
+            { "name": "name", "title": "name" }
+        ]).then((data)=>{
+            return app.post("/modify/{{ repo_id }}",data);
+        }).then((json)=>{
+            console.log(json);
+        }).catch((e)=>{ console.log(e); });
+    }));
+    tools.appendChild(app.dom("button",[],"remove").listen("click",()=>{
+        app.dialog("Modify",[
+            {   "name": "confirmed",
+                "title": "input DELETE to continue"
+            }
+        ]).then((data)=>{
+            if (data.confirmed!="DELETE") {
+                throw "not DELETE!";
+            }
+            return app.post("/remove/{{ repo_id }}");
+        }).then((json)=>{
+            console.log(json);
+            location.href = "/me/";
+        }).catch((e)=>{ console.log(e); });
+    }));
+    app.post("/list/{{ repo_id }}",{}).then((json)=>{
+        console.log(json);
+        /*repos.innerHTML = "";
+        
+        let new_repo = app.dom("div",["card","new"]);
+        new_repo.addEventListener("click",()=>{
+            console.log("create");
+            app.post("/create",{"title":"test"}).then((json)=>{
+                console.log(json);
+                //location.href = "/view/" + json.repository
+            })
+        });
+        repos.appendChild(new_repo);*/
+    })
+});
+{% endblock %}
+</script>

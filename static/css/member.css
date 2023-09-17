@@ -29,6 +29,7 @@
 \*------------------------------------------------------------*/
 .cardset
 {
+    --hovered-bg-color: rgb(240,240,240);
     --size: calc(100% / 2 - var(--spacing) * 2);
     --rad: calc(var(--spacing)*3);
     display: flex;
@@ -43,26 +44,48 @@
     box-sizing: border-box;
     display: block;
     margin: var(--spacing);
-    border: var(--spacing) solid transparent;
+    border: 0px;
     border-radius: var(--rad);
     padding: var(--spacing);
     max-width: var(--size);
-    height: 200px;
-    background-color: var(--blurred-border);
+    height: fit-content;
+    background-color: transparent;
     overflow: hidden;
 }
-.cardset > .card[data-color]
+.cardset > a.card
 {
-    border-color: rgba(255,255,255,0.2);
+    color: black;
+    background-color: transparent;
+    text-decoration: none;
 }
-/*.cardset > .card[data-color=]
+.cardset > a.card:hover
 {
-    background-color: attr(kj-card-color);
-}*/
+    background-color: var(--hovered-bg-color);
+}
+.cardset > a.card:active
+{
+    background-color: var(--hovered-bg-color);
+}
+.cardset > a.card:visited
+{
+    color: blue;
+    /*background-color: rgb(0,0,255);*/
+}
 
 .cardset > .card.new
 {
-    border-style: dashed;
-    border-color: var(--blurred-border);
+    position: relative;
+    border: var(--spacing) dashed var(--blurred-border);
+    padding: calc(var(--spacing) * 2);
     background-color: transparent;
+    color: var(--blurred-border);
+    font-family: "Arial Black";
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+}
+.cardset > .card.new:hover
+{
+    border-color: var(--hovered-border);
+    color: var(--hovered-border);
 }
