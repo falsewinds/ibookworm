@@ -1,0 +1,15 @@
+flask:
+  secrect: <put flask sesssion secret here>
+  host: "0.0.0.0"   # put flask host IP address here
+  port: 5000        # put flask port here
+
+AWS:
+  user_pool-id: <put Cognito User Pool ID here>
+  application-id: <put Cognito Application ID here>
+
+simpleDB:
+  filename: "global"
+
+
+# after setup above key,
+# rename this file to "config.yaml"

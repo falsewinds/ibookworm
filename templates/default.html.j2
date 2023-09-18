@@ -15,19 +15,14 @@
 {% endfor %}<!-- StyleSheet Block End -->
     </head>
     <body>
-{% if header %}
-        {% include 'header.html.j2' %}
-{% else %}
-        {% include 'navigator.html.j2'%}
-{% endif %}
 <!-- Content Block Begin -->{% block content %}
 {% endblock %}<!-- Content Block End -->
 {% if not noapp %}<!-- JS Block Begin -->
-<!-- JS Module Block Begin -->{% for f in js %}
+{% if js %}<!-- JS Module Block Begin -->{% for f in js %}
         <script type="module" src="{{
             url_for('static', filename='js/' + f)
             }}"></script>
-{% endfor %}<!-- JS Module Block End -->
+{% endfor %}<!-- JS Module Block End -->{% endif %}
         <script type="module">
 import { app } from "{{ url_for('static',filename='js/ibookworm.js') }}";
 {% block script %}{% endblock %}

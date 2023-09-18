@@ -1,9 +1,11 @@
 {% extends 'default.html.j2' %}
 
 {% block content %}
-<div class="-wrapper">
+{% include 'navigator.html.j2'%}
+{% include 'header.html.j2' %}
+<!--<div class="-wrapper">
     <div id="Member">Me</div>
-</div>
+</div>-->
 <div class="-wrapper cardset">
     <div class="card shine"></div>
     <div class="card shine"></div>
@@ -13,6 +15,7 @@
 <script>
 {% block script %}
 app.ready((ap)=>{
+    ap.speak("I, {{ name }}")
     let repo_area = document.querySelector(".cardset"),
         create = repo_area.querySelector(".card.new");
     function reload() {
@@ -49,16 +52,15 @@ app.ready((ap)=>{
         // Create "create repository" Button
         create = app.dom("div",["card","new"],"Create New Repository");
         create.addEventListener("click",()=>{
-            app.dialog("",[
-                {   "name": "title",
-                    "title": "Title"
-                }
+            app.dialog("New Repository",[
+                { "name": "title" }
             ]).then((fields)=>{
-                app.post("/create",fields).then((json)=>{
+                console.log(fields);
+                /*app.post("/create",fields).then((json)=>{
                     console.log(json);
                     reload();
                     //location.href = "/view/" + json.repository
-                })
+                });*/
             }).catch(()=>{});
         });
         repo_area.appendChild(create);

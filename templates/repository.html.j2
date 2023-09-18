@@ -1,6 +1,7 @@
 {% extends 'default.html.j2' %}
 
 {% block content %}
+{% include 'navigator.html.j2'%}
 <div class="-wrapper">
     <div>{{ repo_name }}</div>
     <div id="tools"></div>
@@ -25,7 +26,7 @@ app.ready((ap)=>{
         }).catch((e)=>{ console.log(e); });
     }));
     tools.appendChild(app.dom("button",[],"remove").listen("click",()=>{
-        app.dialog("Modify",[
+        app.dialog("Delete",[
             {   "name": "confirmed",
                 "title": "input DELETE to continue"
             }

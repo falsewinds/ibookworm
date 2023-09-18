@@ -1,5 +1,6 @@
 {% extends 'default.html.j2' %}
 {% block content %}
+{% include 'header.html.j2' %}
 <div class="-wrapper">
     <form class="-center" method="POST" action="{{ url_for('login') }}">
         <label kj-label="Username">

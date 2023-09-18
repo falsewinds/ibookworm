@@ -69,8 +69,9 @@ def login():
 
 @app.route("/logout")
 def logout():
+    user = session.get("username")
     token = session["accesstoken"]
-    gDB.set_token_expired(token)
+    gDB.set_token_expired(user,token)
     session["accesstoken"] = None
     session["message"] = None
     return redirect("/")
@@ -79,8 +80,13 @@ def logout():
 def member():
     if not check_membership():
         return redirect("/")
+    user = session.get("username")
+    name = gDB.get_member_name(user)
+    if name is None:
+        name = user
     return render_template("member.html.j2",
-        title=capt(), css=css+["member.css"])
+        title=capt(), css=css+["member.css"],
+        name=name)
 
 @app.route("/view/<repo>/")
 @app.route("/view/<repo>")
