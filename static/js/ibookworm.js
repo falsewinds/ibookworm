@@ -1,4 +1,5 @@
 import { dom_wrapper } from "./dom_wrapper.js"
+import { locate_element, Layout } from "./dom_layout.js"
 
 /*------------------------------------------------------------*\
  * Cover SVG
@@ -29,7 +30,15 @@ function discover() {
 /*------------------------------------------------------------*\
  * Dialog
 \*------------------------------------------------------------*/
-let dialog_wrapper = null;
+let dialog_wrapper = null, dialog_caching = {};
+function is_cached(key,data) {
+    let jsonstr = JSON.stringify(data), cached = false;
+    if (key in dialog_caching) {
+        cached = (dialog_caching[key]==jsonstr);
+    }
+    if (!cached) { dialog_caching[key] = jsonstr; }
+    return cached;
+}
 function get_form_data(form) {
     let fields = form.querySelectorAll("input,select,textarea"),
         formdata = {};
@@ -42,9 +51,7 @@ function get_form_data(form) {
     }
     return formdata;
 };
-function show_dialog(caption,inputs,
-    buttons = ["confirm","cancel"],
-    success = "confirm") {
+async function show_dialog(caption, fields, buttons, success, validater) {
     cover();
     if (dialog_wrapper==null) {
         dialog_wrapper = dom_wrapper.Create([
@@ -62,26 +69,38 @@ function show_dialog(caption,inputs,
         console.error("Dialog is actived!");
     }
     dialog_wrapper.query(".-caption").clear().text(caption);
-    dialog_wrapper.query(".-fields").clear()
-        .append(inputs.map((input,index)=>{
-            let tag = ("tag" in input) ? input.tag : "input",
-                name = ("name" in input) ? input.name : "field"+index,
-                attr = ("attr" in input) ? input.attr : {};
-            attr["name"] = name;
-            if (index==0) { attr["kj-first-field"] = "LookAtMe"; }
-            let e = new dom_wrapper(tag,null,[],attr,null,null);
-            let title = ("title" in input) ? input.title : name,
-                lbl = new dom_wrapper("label",null,[],{"kj-label":title},null,null);
-            lbl.append(e);
-            return lbl;
-        }));
-    dialog_wrapper.query(".-buttons").clear()
-        .append(buttons.map((btn)=>{
-            return new dom_wrapper(
-                "button", null, [btn],
-                { "kj-result": btn },
-                btn, null);
-        }));
+    if (!is_cached("fields",fields)) {
+        dialog_wrapper.query(".-fields").clear()
+            .append(fields.map((field,index)=>{
+                let tag = ("tag" in field) ? field.tag : "input",
+                    name = ("name" in field) ? field.name : "field"+index,
+                    attr = ("attr" in field) ? field.attr : {};
+                attr["name"] = name;
+                if (index==0) { attr["kj-first-field"] = "LookAtMe"; }
+                let e = new dom_wrapper(tag,null,[],attr,null,null);
+                if (tag=="select" && "options" in field) {
+                    let opts = field.options;
+                    for(let k in opts) {
+                        e.append(new dom_wrapper(
+                            "option",null,[],
+                            {"value":k},opts[k],null));
+                    }
+                }
+                let title = ("title" in field) ? field.title : name,
+                    lbl = new dom_wrapper("label",null,[],{"kj-label":title},null,null);
+                lbl.append(e);
+                return lbl;
+            }));
+    }
+    if (!is_cached("buttons",buttons)) {
+        dialog_wrapper.query(".-buttons").clear()
+            .append(buttons.map((btn)=>{
+                return new dom_wrapper(
+                    "button", null, [btn],
+                    { "kj-result": btn },
+                    btn, null);
+            }));
+    }
     success = (success instanceof Array) ? success : [success];
     let w = dialog_wrapper.element.offsetWidth,
         h = dialog_wrapper.element.offsetHeight,
@@ -89,30 +108,95 @@ function show_dialog(caption,inputs,
         mv = (window.innerHeight - h) / 4;
     dialog_wrapper.element.style.margin = mv+"px "+mh+"px";
     dialog_wrapper.element.style.visibility = "visible";
+    if (typeof validater != "function") { validater = ()=>true; }
     return new Promise((suc,rej)=>{
         dialog_wrapper.query("*[kj-first-field]")?.element.focus();
         let form = dialog_wrapper.query("form").element;
         let dialog_submit = (e)=>{
             e.preventDefault();
-            hide_dialog();
             let result = e.submitter.getAttribute("kj-result");
             if (success.includes(result)) {
-                suc(get_form_data(form));
+                let fd = get_form_data(form);
+                if (!validater(fd)) { return; }
+                suc(fd);
             } else { rej(result); }
+            dialog_wrapper.element.style.visibility = "hidden";
             form.removeEventListener("submit",dialog_submit);
             discover();
         };
         form.addEventListener("submit",dialog_submit);
     });
 }
-function hide_dialog() {
-    dialog_wrapper.element.style.visibility = "hidden";
+
+/*------------------------------------------------------------*\
+ * Menu
+\*------------------------------------------------------------*/
+let menus = {};
+function create_menu(key,items) {
+    if (key in menus) { return; }
+    let menu = new dom_wrapper(".-menu");
+    menu.element.style.visibility = "hidden";
+    menu.listen("menu_submit",(e)=>{
+        menu.element.style.visibility = "hidden";
+        if (e?.detail==null) {
+            menu?.__reject?.("No item select");
+            return;
+        }
+        let item = e.detail?.item,
+            callback = e.detail?.callback;
+        if (typeof callback == "function") {
+            callback.apply(item,[menu.element]);
+        }
+        menu?.__resolve?.(item);
+    });
+    menu.append(items.map((it)=>{
+        if (it=="-") { return new dom_wrapper(".-separater"); }
+        let menuitem = new dom_wrapper(".-menuitem");
+        if ("title" in it) { menuitem.text(it.title); }
+        let callback = it?.callback;
+        if (typeof callback != "function") { callback = ()=>true; }
+        menuitem.listen("click",function(e) {
+            menu.element.dispatchEvent(new CustomEvent("menu_submit",{
+                "detail": {
+                    "item": this,
+                    "callback": callback
+                }
+            }))
+        });
+        return menuitem.element;
+    }));
+    menus[key] = menu;
 }
+async function show_menu(key,target,dir) {
+    if (!(key in menus)) { return Promise.reject("No Menu."); }
+    let menu = menus[key];
+    if (menu.element.style.visibility != "hidden") {
+        menu.element.dispatchEvent(new CustomEvent("menu_submit"));
+        return Promise.reject("Menu is actived.");
+    }
+    if (typeof target == "string") { target = document.querySelector(target); }
+    if (!(target instanceof HTMLElement)) {
+        //console.error("Menu should has HTMLElement parent!");
+        return Promise.reject("Menu should has HTMLElement parent!");
+    }
+    // TODO: calculate target position & menu position
+    locate_element(menu.element,target,dir);
+    return new Promise((suc,rej)=>{
+        menu.__resolve = suc;
+        menu.__reject = rej;
+        menu.element.style.visibility = "visible";
+    });
+}
+
+/*------------------------------------------------------------*\
+ * Notify
+\*------------------------------------------------------------*/
 
 /*------------------------------------------------------------*\
  * IBookwormApp : status
 \*------------------------------------------------------------*/
 let app_status = null;
+
 /*------------------------------------------------------------*\
  * IBookwormApp : module
 \*------------------------------------------------------------*/
@@ -138,19 +222,19 @@ function load_module() {
             module_waiting_list.push(ENDPOINT);
             continue;
         }
-        let d = m.dependency.filter((mk)=>(mk in module_loaded));
+        let d = m.dependency.filter((mk)=>!(mk in module_loaded));
         if (d.length>0) {
-            this.builds.push(m)
+            module_waiting_list.push(m)
             continue;
         }
         let scope = {};
         m.initialize(scope,this);
-        scope.types?.forEach((tk)=>{
+        /*scope.types?.forEach((tk)=>{
             if (!(tk in module_index_map)) {
                 module_index_map[tk] = [];
             }
             module_index_map[tk].push(m.key);
-        });
+        });*/
         module_loaded[m.key] = scope;
         builds++;
     }
@@ -160,12 +244,26 @@ function load_module() {
 /*------------------------------------------------------------*\
  * IBookwormApp : delay_call
 \*------------------------------------------------------------*/
+const URL_PATH_KEY = [ null, "API", "repository", "doc_id" ]
 let callback_waiting_list = [];
-function delay_call(ap) {
+async function delay_call(ap) {
     let called = 0;
+    let path = location.pathname,
+        data = path.split("/").reduce((dict,s,i)=>{
+            if (i>=URL_PATH_KEY.length) { return dict; }
+            let k = URL_PATH_KEY[i],
+                v = (s.length>0) ? s : null;
+            if (k!=null && v!=null) { dict[k] = v; }
+            return dict;
+        },{});
     while (callback_waiting_list.length>0) {
-        let callback = callback_waiting_list.shift();
-        callback?.apply(ap,[ap]);
+        let cb = callback_waiting_list.shift(),
+            ret = cb.callback?.apply(ap,[path,data,ap]);
+        if (ret instanceof Promise) {
+            await ret
+                .then(data=>cb.resolve(data))
+                .catch(err=>cb.reject(err));
+        }
         called++;
     }
     console.log("[IBookwormApp] "+called+" function(s) called.");
@@ -223,44 +321,35 @@ function trigger_nav_with_scroll(height = 48) {
 }
 
 /*------------------------------------------------------------*\
+ * Service Worker
+\*------------------------------------------------------------*/
+async function register_serviceworker(filename) {
+    if ("serviceWorker" in navigator) {
+        try {
+            const reg = await navigator.serviceWorker.register(
+                filename, { scope: "/" });
+            /*if (registration.installing) {
+                console.log("正在安装 Service worker");
+            } else if (registration.waiting) {
+                console.log("已安装 Service worker installed");
+            } else if (registration.active) {
+                console.log("激活 Service worker");
+            }*/
+        } catch (e) { console.error(e); }
+    }
+}
+
+/*------------------------------------------------------------*\
  * IBookwormApp
 \*------------------------------------------------------------*/
 class IBookwormApp {
     constructor() {
-        this.dialog = show_dialog;
+        register_serviceworker("/worker.js");
+        this.Layout = new Layout();
+        this.Module = null;
     };
 
-    svg(tag, clss=[], attrs={}) {
-        if (app_status!="loaded") { return null; }
-        let e = document.createElementNS("http://www.w3.org/2000/svg",tag);
-        if (clss instanceof Array) {
-            clss.forEach((c)=>{ e.classList.add(c); });
-        } else if (typeof clss == "string") {
-            e.classList.add(clss);
-        } else { console.error("invalid clss!",clss); }
-        for(let k in attrs) {
-            e.setAttributeNS(null,k,attrs[k]);
-        }
-        return e;
-    }
-    dom(tag, clss=[], text=null) {
-        if (app_status!="loaded") { return null; }
-        let e = document.createElement(tag);
-        if (clss instanceof Array) {
-            clss.forEach((c)=>{ e.classList.add(c); });
-        } else if (typeof clss == "string") {
-            e.classList.add(clss);
-        } else { console.error("invalid clss!",clss); }
-        if (text!=null) {
-            e.appendChild(document.createTextNode(text));
-        }
-        if (e.listen) { console.log(e.listen); }
-        e.listen = function() {
-            this.addEventListener.apply(this,arguments);
-            return this;
-        };
-        return e;
-    };
+    dom(css,text) { return new dom_wrapper(css).text(text); };
 
     extends(key,dep,init) {
         module_waiting_list.push({
@@ -268,15 +357,42 @@ class IBookwormApp {
             "dependency": (dep instanceof Array) ? dep : [dep],
             "initialize": (typeof init == "function") ? init : ()=>init
         });
-        if (app_loaded) { load_module(); }
+        if (app_status=="loaded") { load_module(); }
     };
-
-    ready(callback) {
-        if (app_status=="loaded") {
-            callback.apply(this,[this]);
+    search(type) {
+        let availables = [];
+        for(let k in module_loaded) {
+            let m = module_loaded[k];
+            if (m.types?.includes?.(type)) {
+                availables.push(k);
+            }
+        }
+        return availables;
+    };
+    use(key) {
+        if (!(key in module_loaded)) {
+            throw "No modules named ["+key+"]";
             return;
         }
-        callback_waiting_list.push(callback);
+        this.Module = module_loaded[key];
+        this.Module.initialize?.();
+        //return m;
+    };
+
+    async ready(callback) {
+        if (app_status=="loaded") {
+            let ret = callback.apply(this,[this]);
+            if (ret instanceof Promise) { return ret; }
+            return Promise.resolve();
+        }
+        let wrapped_callback = {
+            "callback": callback
+        };
+        callback_waiting_list.push(wrapped_callback);
+        return new Promise((suc,rej)=>{
+            wrapped_callback.resolve = suc;
+            wrapped_callback.reject = rej;
+        });
     };
 
     async post(url,data) {
@@ -330,6 +446,21 @@ class IBookwormApp {
         };
         window.addEventListener("load",loader);
         app_status = "before_load"
+    };
+
+    /*----------------------------*\
+     * UI interface
+    \*----------------------------*/
+
+    async dialog(caption,fields,validater) {
+        return show_dialog(caption,fields,
+            ["confirm","cancel"],"confirm",
+            validater);
+    };
+
+    async menu(key,items,target,dir) {
+        create_menu(key,items);
+        return show_menu(key,target,dir);
     };
 };
 

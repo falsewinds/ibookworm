@@ -3,7 +3,7 @@
 {% block content %}
 {% include 'navigator.html.j2'%}
 <div class="-wrapper">
-    <div>{{ repo_name }}</div>
+    <div id="caption"></div>
     <div id="tools"></div>
     <ul id="toc"></ul>
 </div>
@@ -11,21 +11,52 @@
 
 <script>
 {% block script %}
-app.ready((ap)=>{
-    let tools = document.querySelector("#tools"),
-        toc = document.querySelector("#toc");
-    // Tool: remove test button
-    tools.appendChild(app.dom("button",[],"modify").listen("click",()=>{
+app.extends("repository",[],(scope)=>{
+    app.Layout.initialize({
+        "caption": {
+            "element": "#caption",
+            "methods": {
+                "set": function(capt) { this.text(capt); }
+            }
+        },
+        "tools": {
+            "element": "#tools",
+            "methods": {
+                "add": function(icon,text,click) {
+                    //let css = "button" + (icon!=null) ? ("."+icon) : "";
+                    let css = "button";
+                    if (icon!=null) { css += "[kj-icon=\""+icon+"\"]"; }
+                    this.append(app.dom(css,text).listen("click",click));
+                }
+            }
+        },
+        "toc": {
+            "element": "#toc",
+            "methods": {
+                "clear": function() { this.clear(); }/*,
+                "": function()*/
+            }
+        }
+    });
+});
+app.ready((urlpath,urldata,ap)=>{
+    return app.post("/list/"+urldata.repository,{});
+}).then((json)=>{
+    let repo_id = json.id;
+    app.Layout.get("caption").set(json.name);
+    // Tools
+    let tools = app.Layout.get("tools");
+    tools.add("edit","modify",()=>{
         app.dialog("Modify",[
             { "name": "alias", "title": "alias" },
             { "name": "name", "title": "name" }
         ]).then((data)=>{
-            return app.post("/modify/{{ repo_id }}",data);
+            return app.post("/modify/"+repo_id);
         }).then((json)=>{
             console.log(json);
         }).catch((e)=>{ console.log(e); });
-    }));
-    tools.appendChild(app.dom("button",[],"remove").listen("click",()=>{
+    });
+    tools.add("delete","remove",()=>{
         app.dialog("Delete",[
             {   "name": "confirmed",
                 "title": "input DELETE to continue"
@@ -34,26 +65,27 @@ app.ready((ap)=>{
             if (data.confirmed!="DELETE") {
                 throw "not DELETE!";
             }
-            return app.post("/remove/{{ repo_id }}");
+            return app.post("/remove/"+repo_id);
         }).then((json)=>{
             console.log(json);
             location.href = "/me/";
         }).catch((e)=>{ console.log(e); });
-    }));
-    app.post("/list/{{ repo_id }}",{}).then((json)=>{
-        console.log(json);
-        /*repos.innerHTML = "";
-        
-        let new_repo = app.dom("div",["card","new"]);
-        new_repo.addEventListener("click",()=>{
-            console.log("create");
-            app.post("/create",{"title":"test"}).then((json)=>{
-                console.log(json);
-                //location.href = "/view/" + json.repository
-            })
-        });
-        repos.appendChild(new_repo);*/
-    })
+    });
+    tools.add("note_add","create",()=>{
+        window.open("/edit/"+repo_id,"_blank").focus();
+    });
+    tools.add("input","import",()=>{});
+    /*repos.innerHTML = "";
+    
+    let new_repo = app.dom("div",["card","new"]);
+    new_repo.addEventListener("click",()=>{
+        console.log("create");
+        app.post("/create",{"title":"test"}).then((json)=>{
+            console.log(json);
+            //location.href = "/view/" + json.repository
+        })
+    });
+    repos.appendChild(new_repo);*/
 });
 {% endblock %}
 </script>

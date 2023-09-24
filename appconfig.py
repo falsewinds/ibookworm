@@ -1,4 +1,3 @@
-
 from datetime import timedelta
 from flask import Flask
 from flask_caching import Cache
@@ -27,6 +26,12 @@ if "Redis" in cfg:
 
 TIMEOUT_DAY = 24 * 60 * 60
 
+if "expire" in cfg:
+    expire_day = int(cfg["expire"])
+    EXPIRED_TIME = timedelta(days=expire_day)
+else:
+    EXPIRED_TIME = timedelta(days=60)
+
 cache = Cache(config=cache_cfg)
 
 db_cfg = cfg["simpleDB"]
@@ -40,6 +45,7 @@ def configure_app(app : Flask):
         secrect = os.urandom(24)
         app.config["SECRET_KEY"] = secrect
         print(secrect)
-    app.config["PERMANET_SESSION_LIFETIME"] = timedelta(days=31)
+    app.config["PERMANET_SESSION_LIFETIME"] = EXPIRED_TIME
     # Caching
     cache.init_app(app)
+    cache.clear()

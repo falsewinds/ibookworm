@@ -1,27 +1,27 @@
-from appconfig import configure_app, cache, db_cfg, TIMEOUT_DAY
-from flask import Flask, request, session, abort, render_template, redirect, jsonify
+from appconfig import configure_app
+from flask import Flask, request, session, render_template, redirect, jsonify
 import globaldb as gDB
 import localdb as iDB
+#from sqlite_lib import get_db_path
 
 app = Flask(__name__)
 configure_app(app)
-# GlobalDB Configuration
-gDB.initialize(db_cfg)
 
-'''
+'''-------------------------------------------------------------
 Default Settings
-'''
+ - initialize(cfg)
+-------------------------------------------------------------'''
 
 CAPTION = "I, Bookworm"
-
 def capt(suffix = None):
     if suffix is None:
         return CAPTION
     return CAPTION + ": " + suffix
 
 css = [ "normal.css", "form.css", "animation.css" ]
+app_js = [ "dom_wrapper.js", "ibookworm.js" ]
 view_mods = [ "reader.js" ]
-edit_mods = []
+edit_mods = [ "puretexteditor.js" ]
 
 def check_membership():
     user = session.get("username")
@@ -40,9 +40,17 @@ def check_membership():
     return True
 
 
-'''
+'''-------------------------------------------------------------
 Views
-'''
+ - /
+ - /login
+ - /logout
+ - /me/
+ - /view/<repo>/
+ - /view/<repo>/<doc>
+ - /edit/<repo>/<doc>
+ - /worker.js
+-------------------------------------------------------------'''
 
 @app.route("/")
 def landing():
@@ -98,10 +106,11 @@ def view_toc(repo):
     id = gDB.get_repository_id(repo)
     name = gDB.get_repository_name(id)
     if name is None:
+        from flask import abort
         abort(404)
     return render_template("repository.html.j2",
         title=name, css=css+["repository.css"],
-        repo_id=id, repo_name=name)
+        repo_name=name)
 
 @app.route("/view/<repo>/<doc>")
 @app.route("/v/<repo>/<doc>")
@@ -110,21 +119,34 @@ def view_doc(repo, doc):
         return redirect("/")
     return render_template("viewer.html.j2",
         title=capt("Viewer"),
-        css=css, js=view_mods,
+        css=css+["viewer.css"], js=view_mods,
         doc_id=doc)
 
 @app.route("/edit/<repo>/<doc>")
+@app.route("/edit/<repo>/")
 @app.route("/edit/")
 def edit(repo = None, doc = None):
     if not check_membership():
         return redirect("/")
     return render_template("editor.html.j2",
-        title=capt("Editor"), css=css, js=edit_mods)
+        title=capt("Editor"),
+        css=css+["editor.css"], js=edit_mods)
+
+@app.route("/worker.js")
+def service_worker_js():
+    from flask import make_response
+    response = make_response(
+        render_template("worker.js.j2",
+            css=css, js=app_js+view_mods+edit_mods
+        ))
+    response.headers["Content-Type"] = "application/javascript"
+    response.headers["Service-Worker-Allowed"] = "/"
+    return response
 
 
-'''
+'''-------------------------------------------------------------
 Controls
-'''
+-------------------------------------------------------------'''
 
 ACCESS_DENIED = {
     "error": 401,
@@ -147,10 +169,17 @@ def try_get_dict():
         return request.get_json()
     return request.values.to_dict()
 
+'''-------------------------------------------------------------
+Controls : repository
+ - /list
+ - /list/<repo>
+ - /create
+ - /modify/<repo>
+ - /remove/<repo>
+-------------------------------------------------------------'''
+
 @app.route("/list", methods=["POST"])
-@cache.cached(timeout=TIMEOUT_DAY)
 def load_list():
-    print(request.path)
     if not check_membership():
         return jsonify(ACCESS_DENIED)
     user = session.get("username")
@@ -159,18 +188,17 @@ def load_list():
 
 
 @app.route("/list/<repo>", methods=["POST"])
-@cache.cached(timeout=TIMEOUT_DAY)
 def load_document_list(repo):
     if not check_membership():
         return jsonify(ACCESS_DENIED)
     user = session.get("username")
-    if not gDB.is_permission(user,repo,0x01):
+    id = gDB.get_repository_id(repo)
+    if not gDB.is_permission(user,id,0x01):
         return jsonify({
             "error": 403,
             "message": "No permission."
         })
-    path = iDB.get_db_path(user,repo)
-    return jsonify(iDB.list_repository(path))
+    return jsonify(iDB.list_toc(user,id))
 
 
 @app.route("/create", methods=["POST"])
@@ -184,10 +212,8 @@ def create_repository():
             "error": 406,
             "message": "Must have a title."
         })
-    cache.delete("view/%s" % "/list")
     repo, stamped = gDB.create_repository(user,title)
-    path = iDB.get_db_path(user,repo)
-    iDB.create_repository(path)
+    iDB.create_repository(user,repo)
     return jsonify({
         "repository": repo
     })
@@ -197,81 +223,76 @@ def modify_repository(repo):
     if not check_membership():
         return jsonify(ACCESS_DENIED)
     user = session.get("username")
-    if not gDB.is_permission(user,repo,0xFF):
+    id = gDB.get_repository_id(repo)
+    if not gDB.is_permission(user,id,0xFF):
         return jsonify({
             "error": 403,
             "message": "No permission."
         })
-    cache.delete("view/%s" % "/list")
-    return jsonify(gDB.update_repositry(user,repo,try_get_dict()))
+    return jsonify(gDB.update_repositry(user,id,try_get_dict()))
 
 @app.route("/remove/<repo>", methods=["POST"])
 def remove_repository(repo):
     if not check_membership():
         return jsonify(ACCESS_DENIED)
     user = session.get("username")
-    if not gDB.is_permission(user,repo,0xFF):
+    id = gDB.get_repository_id(repo)
+    if not gDB.is_permission(user,id,0xFF):
         return jsonify({
             "error": 403,
             "message": "No permission."
         })
-    cache.delete("view/%s" % "/list")
-    name = gDB.get_repository_name(repo)
-    gDB.remove_repository(user,repo)
+    name = gDB.get_repository_name(id)
+    gDB.remove_repository(user,id)
     return jsonify({
         "id": repo,
         "name": name
     })
 
-
-@app.route("/open/<repo>", methods=["POST"])
-def new_document(repo):
-    if not check_membership():
-        return jsonify(ACCESS_DENIED)
-    user = session.get("username")
-    # TODO: check rank
-    if not gDB.is_permission(user,repo,0xFF):
-        return jsonify({
-            "error": 403,
-            "message": "No permission."
-        })
-    cache.delete("view/%s" % "/list")
-    cache.delete("view/%s" % f"/list/{repo}")
-    path = iDB.get_db_path(user,repo)
-    doc_id = iDB.create_doc(path)
-    return jsonify({ "doc_id": doc_id })
+'''-------------------------------------------------------------
+Controls : document
+ - /load/<repo>/<doc>
+ - /save/<repo>/<doc>
+ - /save/<repo>/
+ - /save/<repo>
+ - /import/<repo>
+ - /peek/<job>
+ - /download/<repo>
+-------------------------------------------------------------'''
 
 @app.route("/load/<repo>/<doc_id>", methods=["POST"])
-@cache.cached(timeout=TIMEOUT_DAY)
 def load_document(repo,doc_id):
     if not check_membership():
         return jsonify(ACCESS_DENIED)
     user = session.get("username")
-    path = iDB.get_db_path(user,repo)
-    return jsonify({})
+    return jsonify(iDB.read_doc(user,repo,doc_id))
 
 @app.route("/save/<repo>/<doc_id>", methods=["POST"])
-def save_document(repo,doc_id):
+@app.route("/save/<repo>/", methods=["POST"])
+@app.route("/save/<repo>", methods=["POST"])
+def save_document(repo,doc_id = None):
     if not check_membership():
         return jsonify(ACCESS_DENIED)
-    cache.delete("view/%s" % f"/load/{repo}/{doc_id}")
     user = session.get("username")
-    return jsonify({})
+    if doc_id is None:
+        doc_id = iDB.create_doc(user,repo,
+            try_get_value("title"),
+            try_get_value("type"),
+            {},
+            try_get_value("content"))
+        ver = 0
+    else:
+        doc_id, ver = iDB.update_doc(user,repo,doc_id,try_get_dict())
+    return jsonify({
+        "doc_id": doc_id,
+        "version": ver
+    })
 
 @app.route("/import/<repo>", methods=["POST"])
 def import_documents(repo):
     if not check_membership():
         return jsonify(ACCESS_DENIED)
-    #cache.delete("view/%s" % "/list")
-    cache.delete("view/%s" % f"/list/{repo}")
     user = session.get("username")
-    return jsonify({})
-
-@app.route("/peek/<job>", methods=["POST","GET"])
-def peek_job_progress(job):
-    if not check_membership():
-        return jsonify(ACCESS_DENIED)
-    #user = session.get("username")
     return jsonify({})
 
 @app.route("/download/<repo>")
@@ -281,10 +302,23 @@ def download(repo):
     #user = session.get("username")
     return jsonify({})
 
+'''-------------------------------------------------------------
+Controls : async job
+ - /peek/<job>
+-------------------------------------------------------------'''
 
-'''
+@app.route("/peek/<job>", methods=["POST","GET"])
+def peek_job_progress(job):
+    if not check_membership():
+        return jsonify(ACCESS_DENIED)
+    #user = session.get("username")
+    return jsonify({})
+
+
+'''-------------------------------------------------------------
 Error Handler : 404
-'''
+-------------------------------------------------------------'''
+
 @app.errorhandler(404)
 def page_not_found(err):
     return render_template("404.html.j2",
@@ -293,6 +327,10 @@ def page_not_found(err):
         css=["normal.css"],
         errmsg=err), 404
 
+
+'''-------------------------------------------------------------
+Activate FalskApp
+-------------------------------------------------------------'''
 if __name__ == "__main__":
     app.run()
     #app.run(host="0.0.0.0", port=5000)

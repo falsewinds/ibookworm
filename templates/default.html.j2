@@ -7,7 +7,7 @@
         <title>{{ title }}</title>
         <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}" sizes="any" />
         <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml" />
-        <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}" />
+        <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}" type="application/manifest+json" />
 <!-- StyleSheet Block Begin -->{% for f in css %}
         <link rel="stylesheet" type="text/css" href="{{
             url_for('static', filename='css/' + f)
@@ -26,6 +26,7 @@
         <script type="module">
 import { app } from "{{ url_for('static',filename='js/ibookworm.js') }}";
 {% block script %}{% endblock %}
+app.ServiceWorker = "{{ url_for('static',filename='js/worker.js') }}"
 app.run();
         </script>
 <!-- JS Block End -->{% endif %}

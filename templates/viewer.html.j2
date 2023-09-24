@@ -1,4 +1,49 @@
 {% extends 'default.html.j2' %}
+
 {% block content %}
 {% include 'navigator.html.j2'%}
+<div class="-wrapper">
+    <div id="title"></div>
+    <div class="-navigator"></div>
+    <div id="content"></div>
+    <div class="-navigator"></div>
+</div>
 {% endblock %}
+
+<script>
+{% block script %}
+app.extends("viewer",[],(scope)=>{
+    app.Layout.initialize({
+        "title": {
+            "element": "#title",
+            "methods": {
+                "set": function(capt) { this.text(capt); }
+            }
+        },
+        "content": {
+            "element": "#content",
+            "methods": {
+                "write": function(lines) {
+                    this.clear();
+                    this.append(lines.map((line)=>{
+                        return app.dom("p",line);
+                    }));
+                }
+            }
+        },
+        "toc": {
+            "element": "#toc",
+            "methods": {
+                "clear": function() { this.clear(); }/*,
+                "": function()*/
+            }
+        }
+    });
+});
+app.ready((urlpath,urldata)=>{
+    app.post("/load/"+urldata.repository+"/"+urldata.doc_id,{})
+}).then((json)=>{
+    console.log(json);
+});
+{% endblock %}
+</script>

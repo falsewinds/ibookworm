@@ -177,3 +177,54 @@ svg.-cover
 {
     background-color: rgb(255,100,100);
 }
+
+/*------------------------------------------------------------*\
+ * menu
+\*------------------------------------------------------------*/
+.-menu
+{
+    position: fixed;
+    /*inset: 0px auto auto 0px;*/
+    z-index: 1000;
+    box-sizing: border-box;
+    display: block;
+    margin: 0px;
+    outline: 0px;
+    border: 1px solid var(--fg-color);
+    padding: 0px;
+    background-color: var(--bg-color);
+    width: fit-content;
+    height: auto;
+    /*transition: top .3s, left .3s;*/
+}
+
+.-menu > .-menuitem
+{
+    position: relative;
+    display: block;
+    margin: 0px;
+    outline: 0px;
+    border: 0px;
+    padding: var(--spacing);
+    font-size: 0.8rem;
+    line-height: 1rem;
+    text-align: center;
+    cursor: pointer;
+}
+.-menu > .-menuitem:hover
+{
+    background-color: rgba(0,0,0,0.25);
+}
+
+.-menu > .-separater
+{
+    position: relative;
+    display: block;
+    margin: var(--spacing) calc(var(--spacing) * 2);
+    outline: 0px;
+    border: 0px;
+    border-bottom: 1px solid var(--fg-color);
+    padding: 0px;
+    height: 0px;
+}
+

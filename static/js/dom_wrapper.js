@@ -257,7 +257,6 @@ class dom_wrapper {
             if (typeof v != "function") { continue; }
             this.element.addEventListener(k,v);
         }
-        //this.element.addEventListener.apply(this.element,arguments);
         return this;
     };
 
@@ -324,6 +323,9 @@ class dom_wrapper {
         return this;
     };
     append(elem) { this.insert(elem,null); };
+    remove() {
+        this.element.parentNode.removeChild(this.element);
+    };
 
     query(css) {
         let es = this.element.querySelectorAll(css),

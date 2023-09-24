@@ -1,0 +1,19 @@
+async function cache_resource(res) {
+    const cache = await caches.open("v1");
+    await cache.addAll(res);
+}
+
+self.addEventListener("install", (event)=>{
+    event.waitUntil(
+        cache_resource([
+{% if css %}/*----------------------------*\
+ * CSS
+\*----------------------------*/{% for f in css %}
+            "{{ url_for('static', filename='css/' + f) }}",{% endfor %}{% endif %}
+{% if js %}/*----------------------------*\
+ * Modules
+\*----------------------------*/{% for f in js %}
+            "{{ url_for('static', filename='js/' + f) }}",{% endfor %}{% endif %}
+        ]),
+    );
+});

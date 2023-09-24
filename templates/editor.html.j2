@@ -1,3 +1,75 @@
 {% extends 'default.html.j2' %}
+
 {% block content %}
+<div class="edit-wrapper">
+    <div class="title">
+        <input id="title" name="title" value="" />
+    </div>
+    <div id="tools"></div>
+    <div id="workspace"></div>
+</div>
 {% endblock %}
+
+<script>
+{% block script %}
+app.extends("editor",[],(scope)=>{
+    scope.tools = {};
+    app.Layout.initialize({
+        "title": {
+            "static": true,
+            "element": "#title",
+            "methods": {
+                "set": function(t) { this.element.value = t; },
+                "get": function() { return this.element.value; }
+            }
+        },
+        "tools": {
+            "element": "#tools",
+            "methods": {
+                "add": function(key,icon,help,callback) {
+                    if (key=="|") {
+                        this.append(app.dom("div.-separater"));
+                        return;
+                    }
+                    let tool = app.dom("div.-icon",help).listen("click",callback);
+                    this.append(tool);
+                    scope.tools[key] = tool;
+                },
+                "show": function(key) {
+                    if (!(key in scope.tools)) { return; }
+                    let tool = scope.tools[key];
+                    tool.element.style.display = "block";
+                },
+                "hide": function(key) {
+                    if (!(key in scope.tools)) { return; }
+                    let tool = scope.tools[key];
+                    tool.element.style.display = "none";
+                }
+            }
+        },
+        "workspace": {
+            "element": "#workspace"
+        }
+    });
+});
+app.ready((urlpath,urldata)=>{
+    let repo_id = urldata.repository,
+        doc_id = urldata?.doc_id;
+    if (doc_id != null) {
+        return app.post("/load/"+repo_id+"/"+doc_id);
+    }
+    return Promise.resolve({
+        "repository": repo_id,
+        "id": -1,
+        "type": "article",
+        "title": "Unnamed",
+        "metadata": {}
+    });
+}).then((json)=>{
+    let modules = app.search(json.type);
+    //console.log(modules);
+    app.use(modules[0]);
+    app.Module.read?.(json);
+});
+{% endblock %}
+</script>
