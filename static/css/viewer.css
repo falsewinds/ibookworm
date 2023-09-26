@@ -1,5 +1,17 @@
 
-
+#title
+{
+    font-size: 2rem;
+    line-height: 2.5rem;
+    text-align: center;
+}
 /*------------------------------------------------------------*\
- * ToC
+ * content
 \*------------------------------------------------------------*/
+#content > p
+{
+    display: block;
+    margin: 0px;
+    margin-top: 0.5rem;
+    min-height: 1.5rem;
+}

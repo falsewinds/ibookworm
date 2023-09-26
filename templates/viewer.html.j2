@@ -4,16 +4,16 @@
 {% include 'navigator.html.j2'%}
 <div class="-wrapper">
     <div id="title"></div>
-    <div class="-navigator"></div>
+    <div class="navigator"></div>
     <div id="content"></div>
-    <div class="-navigator"></div>
+    <div class="navigator"></div>
 </div>
 {% endblock %}
 
 <script>
 {% block script %}
 app.extends("viewer",[],(scope)=>{
-    app.Layout.initialize({
+    scope.Layout = app.layout({
         "title": {
             "element": "#title",
             "methods": {
@@ -23,27 +23,31 @@ app.extends("viewer",[],(scope)=>{
         "content": {
             "element": "#content",
             "methods": {
-                "write": function(lines) {
+                "write": function(content) {
                     this.clear();
-                    this.append(lines.map((line)=>{
-                        return app.dom("p",line);
-                    }));
+                    this.append(content);
                 }
             }
         },
-        "toc": {
-            "element": "#toc",
+        "nav": {
+            "element": ".navigator",
             "methods": {
-                "clear": function() { this.clear(); }/*,
-                "": function()*/
+                "clear": function() { this.clear(); }
             }
         }
     });
+
+    scope.enter = function() {};
 });
 app.ready((urlpath,urldata)=>{
-    app.post("/load/"+urldata.repository+"/"+urldata.doc_id,{})
+    return app.post("/load/"+urldata.repository+"/"+urldata.doc_id,{})
 }).then((json)=>{
-    console.log(json);
+    app.activate("viewer");
+    let mods = app.search(json.type), mod = mods[0];
+    // TODO: check metadata for reader
+    app.activate(mod);
+    let m = app.Module(mod);
+    m.show(json);
 });
 {% endblock %}
 </script>

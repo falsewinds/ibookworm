@@ -17,3 +17,47 @@
 /*------------------------------------------------------------*\
  * ToC
 \*------------------------------------------------------------*/
+ul#toc
+{
+    display: block;
+    margin: 0px;
+    outline: 0px;
+    border: 0px;
+    border-left: 2px solid transparent;
+    padding: 0px;
+}
+
+ul#toc ul:hover
+{
+    border-color: lightgray;
+}
+
+ul#toc li
+{
+    display: flex;
+    margin: var(--spacing);
+    outline: 0px;
+    border: 0px;
+    padding: var(--spacing);
+}
+ul#toc li:hover
+{
+    background-color: var(--nav-color);
+}
+
+ul#toc li > a
+{
+    display: block;
+    flex: 1;
+    text-decoration: none;
+}
+
+ul#toc li > .member,
+ul#toc li > .update
+{
+    display: block;
+    margin-left: var(--spacing);
+    width: fit-content;
+    font-size: 0.6rem;
+    color: gray;
+}

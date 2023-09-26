@@ -2,57 +2,88 @@ import { dom_wrapper } from "./dom_wrapper.js"
 
 class LayoutElement {
     constructor(elem,methods) {
-        this.element = elem;
-        this.wrapper = new dom_wrapper(elem);
-        if (typeof methods == "object") {
-            for(let m in methods) {
-                let callback = methods[m];
-                this[m] = function() {
-                    callback.apply(this.wrapper,arguments);
-                };
+        if (elem.length==1) {
+            this.element = elem[0];
+            this.wrapper = new dom_wrapper(elem[0]);
+            if (typeof methods == "object") {
+                for(let m in methods) {
+                    let callback = methods[m];
+                    this[m] = function() {
+                        return callback.apply(this.wrapper,arguments);
+                    };
+                }
+            }
+        } else {
+            this.elements = elem;
+            this.wrappers = elem.map(e=>new dom_wrapper(e));
+            if (typeof methods == "object") {
+                for(let m in methods) {
+                    let callback = methods[m], args = arguments;
+                    this[m] = function() {
+                        return this.wrappers.map((w)=>{
+                            return callback.apply(w,args);
+                        });
+                    };
+                }
             }
         }
     };
 };
 
 class Layout {
-    constructor() {
+    constructor(cfg) {
         this.regions = {};
-    };
-
-    initialize(reg_cfg) {
-        this.regions = {};
-        for(let key in reg_cfg) {
-            this.set(key,reg_cfg[key]);
-        }
+        for(let key in cfg) { this.set(key,cfg[key]); }
+        this.shortcuts = {};
+        window.addEventListener("keydown",(e)=>{
+            let identifier = ["alt","ctrl","shift"].reduce((trigger,k)=>{
+                if (e[k+"Key"]) { trigger.push(k); }
+                return trigger;
+            },[]);
+            identifier.push(e.key.toLowerCase());
+            identifier = identifier.join("+");
+            if (identifier in this.shortcuts) {
+                let shortcut = this.shortcuts[identifier],
+                    ret = shortcut.apply(e.target,[e]);
+                if (ret!==true) { e.preventDefault(); }
+            }
+        });
     };
     set(key,cfg) {
         let elem = null;
         if (typeof cfg == "object") {
-            if (cfg instanceof HTMLElement) {
+            if (cfg instanceof Array) {
                 elem = cfg;
+                cfg = {};
+            } else if (cfg instanceof dom_wrapper) {
+                elem = [cfg.element];
+                cfg = {};
+            } else if (cfg instanceof HTMLElement) {
+                elem = [cfg];
                 cfg = {};
             } else if ("element" in cfg) {
                 elem = cfg["element"];
                 if (typeof elem == "string") {
-                    elem = document.querySelector(elem);
+                    elem = [...document.querySelectorAll(elem)];
                 }
             }
         } else if (typeof cfg == "string") {
-            elem = document.querySelector(cfg);
+            elem = [...document.querySelectorAll(cfg)];
             cfg = {};
         }
-        if (!(elem instanceof HTMLElement)) {
-            console.error("No a HTMLElement!",elem);
+        elem = elem.reduce((htmls,item)=>{
+            if (item instanceof HTMLElement) {
+                htmls.push(item);
+            } else {
+                console.warn("No a HTMLElement!",item);
+            }
+            return htmls;
+        },[]);
+        if (elem.length<=0) {
+            console.error("No matching HTMLElement!");
             return;
         }
         let wrapper = new LayoutElement(elem,cfg?.methods);
-        /*if ("methods" in cfg) {
-            for(let method in  cfg.methods) {
-                //wrapper[method] = cfg.methods[method];
-                wrapper.set_method(method,cfg.methods[method]);
-            }
-        }*/
         this.regions[key] = wrapper;
         return wrapper;
     };
@@ -62,6 +93,9 @@ class Layout {
         return null;
     };
 
+    on(shortcut,callback) {
+        this.shortcuts[shortcut] = callback;
+    };
 };
 
 /*------------------------------------------------------------*\
@@ -114,7 +148,8 @@ function locate_element(elem,pivot,args,offset = [4,0]) {
     if (!(elem instanceof HTMLElement)) { return; }
     if (!(pivot instanceof HTMLElement)) { pivot = document.body; }
     let ebox = elem.getBoundingClientRect(),
-        pbox = pivot.getBoundingClientRect();
+        pbox = pivot.getBoundingClientRect(),
+        ww = window.innerWidth, wh = window.innerHeight;
     args = (args instanceof Array) ? args : [args];
     let locator = args.map((arg)=>{
         let weight = arg.toLowerCase?.();
@@ -128,9 +163,13 @@ function locate_element(elem,pivot,args,offset = [4,0]) {
             switch (k+i) {
             case "top1":
             case "left1":
-            case "right1":
-            case "bottom1":
                 dict[k] = pbox[k] + off;
+                break;
+            case "right1":
+                dict[k] = (ww-pbox[k]) + off;
+                break;
+            case "bottom1":
+                dict[k] = (wh-pbox[k]) + off;
                 break;
             case "top0":    dict["bottom"] = pbox["top"] + off; break;
             case "left0":   dict["right"] = pbox["left"] + off; break;

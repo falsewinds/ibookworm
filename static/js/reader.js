@@ -2,12 +2,18 @@ import { app } from "./ibookworm.js";
 
 app.extends("SimpleReader",
 ["viewer"],
-(scope,ap)=>{
-    //scope.types = [ "article" ];
-    scope.compress = function(json) {
-        return atob(JSON.stringify(json));
+(scope)=>{
+    scope.types = app.accept_types("article");
+
+    scope.enter = function() {
+        // Inherit VIEWER module Layout
+        this.Layout = app.m("viewer").Layout;
     };
-    scope.decompress = function(data) {
-        return JSON.parse(btoa(data));
+    scope.show = function(doc) {
+        this.Layout.get("title").set(doc.title);
+        let lines = doc.content.split(/\r?\n/g).map((line)=>{
+            return app.dom("p",line);
+        });
+        this.Layout.get("content").write(lines);
     };
 });

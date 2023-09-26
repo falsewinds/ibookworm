@@ -12,7 +12,10 @@
 <script>
 {% block script %}
 app.extends("repository",[],(scope)=>{
-    app.Layout.initialize({
+    let with_id = (tag,id)=>{
+        return tag+"[kj-toc-id=\""+id+"\"]";
+    };
+    scope.Layout = app.layout({
         "caption": {
             "element": "#caption",
             "methods": {
@@ -33,59 +36,81 @@ app.extends("repository",[],(scope)=>{
         "toc": {
             "element": "#toc",
             "methods": {
-                "clear": function() { this.clear(); }/*,
-                "": function()*/
+                "load": function(queue) {
+                    this.clear();
+                    // queue should be an Array
+                    while (queue.length>0) {
+                        let q = queue.shift(),
+                            p = this;
+                        if (q.parent!=null) {
+                            p = this.query(with_id("li",q.parent)+" > ul");
+                            if (p==null) {
+                                console.warn("Cannot find parent.");
+                                p = this;
+                            }
+                        }
+                        let li = app.dom(with_id("li",q.sn));
+                        p.append(li);
+                        li.append(app.dom("a",q.title)
+                            .set_attr("href","/view/"+scope.id+"/"+q.sn)
+                        );
+                        if (q.type=="folder") {
+                            let ul = app.dom("ul");
+                            li.append(ul);
+                            continue;
+                        }
+                        li.append(app.dom("span.member",q.editor));
+                        li.append(app.dom("span.update",q.updated));
+                    }
+                }
             }
         }
     });
+
+    scope.enter = function(repo_data) {
+        let tools = this.Layout.get("tools");
+        tools.add("edit","modify",()=>{
+            app.dialog("Modify",[
+                { "name": "alias", "title": "alias" },
+                { "name": "name", "title": "name" }
+            ]).then((data)=>{
+                return app.post("/modify/"+scope.id,data);
+            }).then((json)=>{
+                console.log(json);
+            }).catch((e)=>{ console.log(e); });
+        });
+        tools.add("delete","remove",()=>{
+            app.dialog("Delete",[
+                {   "name": "confirmed",
+                    "title": "input DELETE to continue"
+                }
+            ]).then((data)=>{
+                if (data.confirmed!="DELETE") {
+                    throw "not DELETE!";
+                }
+                return app.post("/remove/"+scope.id);
+            }).then((json)=>{
+                console.log(json);
+                location.href = "/me/";
+            }).catch((e)=>{ console.log(e); });
+        });
+        tools.add("note_add","create",()=>{
+            let editor = window.open("/edit/"+scope.id,"_blank").focus();
+            console.log(editor);
+            // TODO: make editor change will back to refresh this one
+        });
+        tools.add("input","import",()=>{});
+    };
 });
+
 app.ready((urlpath,urldata,ap)=>{
     return app.post("/list/"+urldata.repository,{});
 }).then((json)=>{
-    let repo_id = json.id;
-    app.Layout.get("caption").set(json.name);
-    // Tools
-    let tools = app.Layout.get("tools");
-    tools.add("edit","modify",()=>{
-        app.dialog("Modify",[
-            { "name": "alias", "title": "alias" },
-            { "name": "name", "title": "name" }
-        ]).then((data)=>{
-            return app.post("/modify/"+repo_id);
-        }).then((json)=>{
-            console.log(json);
-        }).catch((e)=>{ console.log(e); });
-    });
-    tools.add("delete","remove",()=>{
-        app.dialog("Delete",[
-            {   "name": "confirmed",
-                "title": "input DELETE to continue"
-            }
-        ]).then((data)=>{
-            if (data.confirmed!="DELETE") {
-                throw "not DELETE!";
-            }
-            return app.post("/remove/"+repo_id);
-        }).then((json)=>{
-            console.log(json);
-            location.href = "/me/";
-        }).catch((e)=>{ console.log(e); });
-    });
-    tools.add("note_add","create",()=>{
-        window.open("/edit/"+repo_id,"_blank").focus();
-    });
-    tools.add("input","import",()=>{});
-    /*repos.innerHTML = "";
-    
-    let new_repo = app.dom("div",["card","new"]);
-    new_repo.addEventListener("click",()=>{
-        console.log("create");
-        app.post("/create",{"title":"test"}).then((json)=>{
-            console.log(json);
-            //location.href = "/view/" + json.repository
-        })
-    });
-    repos.appendChild(new_repo);*/
+    app.activate("repository");
+    let repo = app.Module("repository");
+    repo.id = json.id;
+    repo.Layout.get("caption").set(json.name);
+    repo.Layout.get("toc").load(json.rows);
 });
 {% endblock %}
 </script>

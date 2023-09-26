@@ -19,7 +19,7 @@ def capt(suffix = None):
     return CAPTION + ": " + suffix
 
 css = [ "normal.css", "form.css", "animation.css" ]
-app_js = [ "dom_wrapper.js", "ibookworm.js" ]
+app_js = [ "dom_wrapper.js", "dom_layout.js", "ibookworm.js", "memberbar.js" ]
 view_mods = [ "reader.js" ]
 edit_mods = [ "puretexteditor.js" ]
 
@@ -93,7 +93,9 @@ def member():
     if name is None:
         name = user
     return render_template("member.html.j2",
-        title=capt(), css=css+["member.css"],
+        title=capt(),
+        js=["memberbar.js"],
+        css=css+["member.css"],
         name=name)
 
 @app.route("/view/<repo>/")
@@ -109,7 +111,9 @@ def view_toc(repo):
         from flask import abort
         abort(404)
     return render_template("repository.html.j2",
-        title=name, css=css+["repository.css"],
+        title=name,
+        js=["memberbar.js"],
+        css=css+["repository.css"],
         repo_name=name)
 
 @app.route("/view/<repo>/<doc>")
@@ -119,7 +123,8 @@ def view_doc(repo, doc):
         return redirect("/")
     return render_template("viewer.html.j2",
         title=capt("Viewer"),
-        css=css+["viewer.css"], js=view_mods,
+        js=["memberbar.js"]+view_mods,
+        css=css+["viewer.css"],
         doc_id=doc)
 
 @app.route("/edit/<repo>/<doc>")
@@ -130,7 +135,8 @@ def edit(repo = None, doc = None):
         return redirect("/")
     return render_template("editor.html.j2",
         title=capt("Editor"),
-        css=css+["editor.css"], js=edit_mods)
+        js=["memberbar.js"]+edit_mods,
+        css=css+["editor.css"])
 
 @app.route("/worker.js")
 def service_worker_js():
@@ -156,6 +162,7 @@ ACCESS_DENIED = {
 def try_get_value(key, def_val):
     if request.is_json:
         jsondata = request.get_json()
+        print(jsondata)
         if key in jsondata:
             return jsondata[key]
         return def_val
@@ -276,10 +283,10 @@ def save_document(repo,doc_id = None):
     user = session.get("username")
     if doc_id is None:
         doc_id = iDB.create_doc(user,repo,
-            try_get_value("title"),
-            try_get_value("type"),
+            try_get_value("title","unnamed"),
+            try_get_value("type","article"),
             {},
-            try_get_value("content"))
+            try_get_value("content",""))
         ver = 0
     else:
         doc_id, ver = iDB.update_doc(user,repo,doc_id,try_get_dict())

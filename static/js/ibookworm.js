@@ -151,10 +151,19 @@ function create_menu(key,items) {
     });
     menu.append(items.map((it)=>{
         if (it=="-") { return new dom_wrapper(".-separater"); }
-        let menuitem = new dom_wrapper(".-menuitem");
-        if ("title" in it) { menuitem.text(it.title); }
-        let callback = it?.callback;
-        if (typeof callback != "function") { callback = ()=>true; }
+        let menuitem = new dom_wrapper(".-menuitem"),
+            callback = () => true;
+        switch (typeof it) {
+        case "string":
+            menuitem.text(it);
+            break;
+        case "object":
+            if ("title" in it) { menuitem.text(it.title); }
+            if (typeof it.callback == "function") {
+                callback = it.callback;
+            }
+            break;
+        }
         menuitem.listen("click",function(e) {
             menu.element.dispatchEvent(new CustomEvent("menu_submit",{
                 "detail": {
@@ -201,8 +210,7 @@ let app_status = null;
  * IBookwormApp : module
 \*------------------------------------------------------------*/
 let module_waiting_list = [],
-    module_loaded = {},
-    module_index_map = {};
+    module_loaded = {};
 function load_module() {
     const ENDPOINT = "IBOOKWORM.XYZ";
     module_waiting_list.push(ENDPOINT);
@@ -229,12 +237,6 @@ function load_module() {
         }
         let scope = {};
         m.initialize(scope,this);
-        /*scope.types?.forEach((tk)=>{
-            if (!(tk in module_index_map)) {
-                module_index_map[tk] = [];
-            }
-            module_index_map[tk].push(m.key);
-        });*/
         module_loaded[m.key] = scope;
         builds++;
     }
@@ -345,11 +347,13 @@ async function register_serviceworker(filename) {
 class IBookwormApp {
     constructor() {
         register_serviceworker("/worker.js");
-        this.Layout = new Layout();
-        this.Module = null;
+        //this.Layout = new Layout();
+        //this.Module = null;
+        this.actived = [];
     };
 
     dom(css,text) { return new dom_wrapper(css).text(text); };
+    layout(cfg) { return new Layout(cfg); };
 
     extends(key,dep,init) {
         module_waiting_list.push({
@@ -369,15 +373,35 @@ class IBookwormApp {
         }
         return availables;
     };
-    use(key) {
+    activate(key) {
         if (!(key in module_loaded)) {
-            throw "No modules named ["+key+"]";
+            console.warn("No modules named ["+key+"]");
             return;
         }
-        this.Module = module_loaded[key];
-        this.Module.initialize?.();
-        //return m;
+        this.actived.push(key);
+        module_loaded[key].enter?.();
     };
+    deactivate(key) {
+        if (!this.actived.includes(key)) {
+            return;
+        }
+        if (!(key in module_loaded)) {
+            console.warn("No modules named ["+key+"]");
+            return;
+        }
+        module_loaded[key].leave?.();
+    };
+    Module(key) {
+        if (!this.actived.includes(key)) {
+            return null;
+        }
+        if (!(key in module_loaded)) {
+            console.warn("No modules named ["+key+"]");
+            return null;
+        }
+        return module_loaded[key];
+    };
+    m(k) { return this.Module(k); }
 
     async ready(callback) {
         if (app_status=="loaded") {
@@ -432,7 +456,16 @@ class IBookwormApp {
     run() {
         if (app_status!=null) { return; }
         window.addEventListener("beforeunload",()=>{
-            console.log("beforeunload",this);
+            //console.log("beforeunload",this);
+            for(let i=this.actived.length;i>=0;i++) {
+                let a = this.actived[i],
+                    m = module_loaded[a];
+                if (m.check?.()!==false) {
+                    /*e.preventDefault();
+                    break;*/
+                    return m.checkMessage;
+                }
+            }
         });
         let loader = ()=>{
             if (app_status=="loaded") { return; }
@@ -446,6 +479,26 @@ class IBookwormApp {
         };
         window.addEventListener("load",loader);
         app_status = "before_load"
+    };
+
+    /*----------------------------*\
+     * prepare types filter
+    \*----------------------------*/
+    accept_types() {
+        let types = [], any = false;
+        for(let i=0;i<arguments.length;i++) {
+            let t = arguments[i].toLowerCase?.();
+            if (t==null || t.length<=0) { continue; }
+            if (t=="*" || t=="any") {
+                any = true;
+                break;
+            }
+            types.push(t);
+        }
+        if (types.length<=0 || any) {
+            return { "includes": ()=>true };
+        }
+        return types;
     };
 
     /*----------------------------*\

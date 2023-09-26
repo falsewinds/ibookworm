@@ -14,7 +14,7 @@
 {% block script %}
 app.extends("editor",[],(scope)=>{
     scope.tools = {};
-    app.Layout.initialize({
+    scope.Layout = app.layout({
         "title": {
             "static": true,
             "element": "#title",
@@ -51,6 +51,46 @@ app.extends("editor",[],(scope)=>{
             "element": "#workspace"
         }
     });
+    /*let init_data = null;
+    scope.Layout.on("ctrl+s",(e)=>{
+        console.log(e);
+        if (init_data==null) { return; }
+        let url = "/save/"+init_data.repository+"/", data = {}
+        if (init_data.id>=0) {
+            url += init_data.id;
+            data["content"] = scope.mod.save();
+        } else {
+            data = {
+                "title": scope.Layout.get("title").get(),
+                "type": init_data.type,
+                "content": scope.module.save()
+            };
+        }
+        console.log(url,data);
+        app.post(url,data).then((json)=>{
+            console.log(json);
+        });
+    });*/
+    let save_doc = ()=>{
+        let url = "/save/" + scope.data.repository + "/",
+            data = {"content":scope.module.save()};
+        if (scope.data.doc_id>=0) {
+            url += scope.data.doc_id;
+            // TODO: check alter data
+        } else {
+            data["title"] = scope.Layout.get("title").get();
+            data["type"] = scope.data.type;
+        }
+        app.post(url,data).then((json)=>{
+            console.log(json);
+            // TODO: reload?
+        });
+    };
+    scope.enter = function() {
+        this.Layout.on("ctrl+s",save_doc);
+        // prepare initial tools
+    };
+    //scope.leave = function() {};
 });
 app.ready((urlpath,urldata)=>{
     let repo_id = urldata.repository,
@@ -66,10 +106,15 @@ app.ready((urlpath,urldata)=>{
         "metadata": {}
     });
 }).then((json)=>{
-    let modules = app.search(json.type);
-    //console.log(modules);
-    app.use(modules[0]);
-    app.Module.read?.(json);
+    app.activate("editor");
+    let editor = app.Module("editor");
+    editor.data = json;
+    let mods = app.search(json.type), mod = mods[0];
+    // TODO: check metadata for editor
+    app.activate(mod);
+    let m = app.Module(mod);
+    editor.module = m;
+    m.load(json);
 });
 {% endblock %}
 </script>

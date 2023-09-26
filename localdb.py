@@ -116,21 +116,23 @@ doc.type:
  - chronicle : { "calendar": { "format": (calendar format string) }, "events": [ EVENT ] }
  - relation : { "character": [ STRING ], "relations": [ RELATION ] }
 """
-def create_doc(user, repo, title, type, meta, data):
+def create_doc(user, repo, title, type, meta, data : str):
     db = get_db_path(user,repo)
     with DBA.open(db) as cur:
         cur.execute("""
             INSERT INTO doc (title,type,metadata,content)
             VALUES (?,?,?,?)
-            """,(title,type,json.dumps(meta),data))
+            """,(title,type,json.dumps(meta),data.encode("utf-8")))
         cur.execute("SELECT id FROM doc WHERE ROWID=?",(cur.lastrowid,))
         doc_id = cur.fetchone()[0]
         user_name = get_member_name(user)
         cur.execute("""
             INSERT INTO toc (doc_id,title,editor)
+            VALUES (?,?,?)
             """,(doc_id,title,user_name))
         cur.execute("""
             INSERT INTO ver (doc_id,editor_id)
+            VALUES (?,?)
             """,(doc_id,user))
     cache.delete_memoized(list_toc,db)
     cache.delete_memoized(read_doc,db,doc_id)
@@ -172,6 +174,7 @@ def update_doc(user, repo, doc_id, data):
         cur.execute(toc_sql,tuple(toc_val))
         cur.execute("""
             INSERT INTO ver (doc_id,version,changes,editor_id)
+            VALUES (?,?,?,?)
             """,(doc_id,version,changes,user))
     cache.delete_memoized(list_toc,db)
     cache.delete_memoized(read_doc,db,doc_id)
@@ -183,13 +186,18 @@ def read_doc(user, repo, doc_id):
     with DBA.open(db) as cur:
         cur.execute("SELECT * FROM doc WHERE id=?",(doc_id,))
         row = cur.fetchone()
+        content = row[5]
+        try:
+            content = content.decode("utf-8")
+        except (UnicodeDecodeError, AttributeError):
+            pass
     return {
         "id": row[0],
-        "tilte": row[1],
+        "title": row[1],
         "type": row[2],
         "version": row[3],
         "metadata": json.loads(row[4]),
-        "content": row[5],
+        "content": content,
         "created": utc_to_local(row[6]),
         "updated": utc_to_local(row[7]),
     }
